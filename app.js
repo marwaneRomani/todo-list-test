@@ -48,6 +48,23 @@ app.get('/api/todos', async (req, res) => {
   }
 });
 
+// Get all todos
+app.get('/api/todos-new', async (req, res) => {
+  try {
+    const todos = await client.lRange('todos', 0, -1);
+    const parsedTodos = todos.map((todo, index) => ({
+      id: index,
+      text: todo,
+      completed: false
+    }));
+    res.json(parsedTodos);
+  } catch (error) {
+    console.error('Error fetching todos:', error);
+    res.status(500).json({ error: 'Failed to fetch todos' });
+  }
+});
+
+
 // Add a new todo
 app.post('/api/todos', async (req, res) => {
   try {
@@ -55,7 +72,7 @@ app.post('/api/todos', async (req, res) => {
     if (!text) {
       return res.status(400).json({ error: 'Todo text is required' });
     }
-    
+
     await client.lPush('todos', text);
     res.status(201).json({ message: 'Todo added successfully' });
   } catch (error) {
@@ -69,7 +86,7 @@ app.delete('/api/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const todos = await client.lRange('todos', 0, -1);
-    
+
     if (id >= 0 && id < todos.length) {
       // Remove the todo at the specified index
       const todoToRemove = todos[id];
